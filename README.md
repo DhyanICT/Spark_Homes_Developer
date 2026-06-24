@@ -5,9 +5,8 @@ SparkScope is a mobile-first, offline-ready repair cost estimator for Spark Home
 ## What is included
 
 - `index.html` - the full vanilla HTML/CSS/JavaScript app.
-- `manifest.webmanifest`, `sw.js`, and PNG icons - PWA install/offline support.
+- `manifest.webmanifest`, `sw.js`, Spark Group logo assets, and PNG icons - PWA install/offline support.
 - `SparkScope-Writeup.pdf` - the required one-page submission writeup.
-- `SparkScope-Writeup-Dhyan.docx` - editable Word version of the one-page writeup.
 
 ## Run locally
 

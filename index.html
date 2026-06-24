@@ -60,19 +60,20 @@
     .top-row { justify-content: space-between; }
     .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .mark {
-      width: 38px;
-      height: 38px;
+      width: 42px;
+      height: 42px;
       border-radius: 8px;
       display: grid;
       place-items: center;
-      font-weight: 900;
-      color: #172033;
-      background: linear-gradient(135deg, #ffffff, #ffe1c7);
+      padding: 4px;
+      background: #fff;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
       flex: 0 0 auto;
     }
+    .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .brand h1 { margin: 0; font-size: 18px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .brand small { display: block; margin-top: 3px; color: rgba(255,255,255,0.72); font-weight: 650; font-size: 11px; }
+    .spark-wordmark { display: block; width: min(230px, 74%); height: auto; margin: 0 0 8px; }
     .top-actions { display: flex; gap: 6px; flex: 0 0 auto; }
     .icon-btn, .small-btn, .primary-btn, .ghost-btn, .danger-btn, .chip, .tab, .price-btn {
       border: 0;
@@ -683,10 +684,10 @@ ex-23,Garage Conversion,8850.00,ea.`;
           <header class="topbar">
             <div class="top-row">
               <div class="brand">
-                <div class="mark">S</div>
+                <div class="mark"><img src="spark-group-mark.png" alt="Spark Group"></div>
                 <div>
                   <h1>SparkScope</h1>
-                  <small>${esc(project.name || "Untitled Project")}</small>
+                  <small>Spark Group - ${esc(project.name || "Untitled Project")}</small>
                 </div>
               </div>
               <div class="top-actions">
@@ -728,6 +729,7 @@ ex-23,Garage Conversion,8850.00,ea.`;
     function renderProjectStrip(project) {
       return `
         <section class="project-strip">
+          <img class="spark-wordmark" src="spark-group-logo.png" alt="Spark Group">
           <div class="project-name">
             <label class="mini-label" for="projectName">Project</label>
             <input id="projectName" data-field="project-name" value="${esc(project.name)}" autocomplete="off">

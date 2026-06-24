@@ -1,11 +1,13 @@
-const CACHE_NAME = "spark-scope-cache-v2";
+const CACHE_NAME = "spark-scope-cache-v3";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon-180.png",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./spark-group-logo.png",
+  "./spark-group-mark.png"
 ];
 
 self.addEventListener("install", event => {
