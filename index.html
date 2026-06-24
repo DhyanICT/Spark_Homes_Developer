@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172033">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SparkScope">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <title>SparkScope Repair Estimator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d7dee8;
+      --paper: #ffffff;
+      --field: #f7f9fc;
+      --bg: #edf2f7;
+      --orange: #df6b24;
+      --orange-soft: #fff0e6;
+      --teal: #0f766e;
+      --teal-soft: #e7f7f4;
+      --red: #b42318;
+      --red-soft: #fff0ef;
+      --blue: #27548a;
+      --shadow: 0 16px 40px rgba(23, 32, 51, 0.14);
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; letter-spacing: 0; }
+    html, body { min-height: 100%; margin: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 15px;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+    .shell { min-height: 100vh; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      color: #fff;
+      background: linear-gradient(135deg, #172033 0%, #213653 58%, #315c5b 100%);
+      box-shadow: 0 12px 28px rgba(23, 32, 51, 0.28);
+      padding: max(10px, env(safe-area-inset-top)) 14px 12px;
+    }
+    .top-row, .metric-row, .toolbar-row, .chip-row, .item-actions, .field-grid, .summary-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .top-row { justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #172033;
+      background: linear-gradient(135deg, #ffffff, #ffe1c7);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
+      flex: 0 0 auto;
+    }
+    .brand h1 { margin: 0; font-size: 18px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand small { display: block; margin-top: 3px; color: rgba(255,255,255,0.72); font-weight: 650; font-size: 11px; }
+    .top-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+    .icon-btn, .small-btn, .primary-btn, .ghost-btn, .danger-btn, .chip, .tab, .price-btn {
+      border: 0;
+      border-radius: var(--radius);
+      min-height: 38px;
+      padding: 0 11px;
+      font-weight: 750;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .icon-btn { width: 40px; padding: 0; background: rgba(255,255,255,0.12); color: #fff; }
+    .icon-btn:hover { background: rgba(255,255,255,0.2); }
+    .metric-row { margin-top: 14px; justify-content: space-between; align-items: end; }
+    .total-label { margin: 0 0 2px; font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.72); font-weight: 850; }
+    .total-value { margin: 0; font-size: clamp(30px, 9vw, 46px); line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .metric-pill { text-align: right; font-size: 12px; color: rgba(255,255,255,0.82); font-weight: 750; }
+    .progress-track { height: 8px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.22); margin-top: 11px; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ffb36c, #57d4bd); transition: width .2s ease; }
+    .main { max-width: 980px; margin: 0 auto; padding: 12px; }
+    .project-strip {
+      background: rgba(255,255,255,0.84);
+      border: 1px solid rgba(215,222,232,0.8);
+      border-radius: var(--radius);
+      padding: 10px;
+      box-shadow: 0 8px 26px rgba(23, 32, 51, 0.08);
+      backdrop-filter: blur(10px);
+    }
+    .project-name { width: 100%; min-width: 0; }
+    .project-name input, .project-name textarea, .field input, .field select, .field textarea, .settings-search, .cost-input, .qty-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      color: var(--ink);
+      outline: none;
+      padding: 10px;
+      min-height: 40px;
+    }
+    .project-name input { font-weight: 850; font-size: 17px; }
+    .project-name textarea, .field textarea { resize: vertical; min-height: 42px; }
+    .toolbar-row { margin-top: 9px; flex-wrap: wrap; overflow-x: visible; padding-bottom: 2px; scrollbar-width: none; }
+    .toolbar-row::-webkit-scrollbar, .chip-row::-webkit-scrollbar { display: none; }
+    .primary-btn { background: var(--orange); color: #fff; }
+    .ghost-btn { background: #eef3f8; color: #203048; border: 1px solid var(--line); }
+    .danger-btn { background: var(--red-soft); color: var(--red); border: 1px solid #ffd0cc; }
+    .small-btn { min-height: 32px; padding: 0 9px; background: #eef3f8; color: #203048; border: 1px solid var(--line); font-size: 12px; }
+    .small-btn.good { background: var(--teal-soft); color: var(--teal); border-color: #b9e7df; }
+    .small-btn.warn { background: var(--orange-soft); color: #ad4d0c; border-color: #ffd6b8; }
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+    .tab { min-height: 42px; background: #dde7f1; color: #435267; border: 1px solid #cbd7e4; font-size: 13px; }
+    .tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .chip-row { display: flex; overflow-x: auto; margin: 12px -12px 0; padding: 0 12px 3px; scrollbar-width: none; }
+    .chip { background: #fff; border: 1px solid var(--line); color: #344054; font-size: 12px; min-height: 38px; max-width: 210px; }
+    .chip.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .chip span { overflow: hidden; text-overflow: ellipsis; }
+    .section-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 14px 0 9px; }
+    .section-head h2 { margin: 0; font-size: 18px; }
+    .section-head p { margin: 3px 0 0; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .group-card, .panel-card, .photo-card, .deal-card, .summary-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 22px rgba(23, 32, 51, 0.07);
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .group-head {
+      width: 100%;
+      min-height: 58px;
+      border: 0;
+      background: #fff;
+      color: var(--ink);
+      padding: 11px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+    }
+    .group-title { font-weight: 900; font-size: 15px; }
+    .group-meta { margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .group-total { font-size: 15px; font-weight: 900; color: var(--orange); font-variant-numeric: tabular-nums; }
+    .chev { color: var(--muted); font-weight: 900; }
+    .group-body { border-top: 1px solid var(--line); background: #fafcff; }
+    .line-item { border-bottom: 1px solid #e8eef5; background: #fff; }
+    .line-main {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 8px;
+      align-items: start;
+      padding: 11px;
+    }
+    .line-main input[type="checkbox"] { width: 24px; height: 24px; margin: 1px 0 0; accent-color: var(--orange); }
+    .item-name { font-weight: 850; line-height: 1.2; }
+    .item-sub { color: var(--muted); font-size: 12px; margin-top: 4px; font-weight: 650; }
+    .line-total { font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .line-total.zero { color: #98a2b3; }
+    .item-detail { padding: 0 11px 11px 53px; display: grid; gap: 8px; }
+    .field-grid { align-items: start; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field label, .mini-label { display: block; color: var(--muted); font-size: 11px; font-weight: 850; text-transform: uppercase; margin-bottom: 4px; }
+    .qty-input, .cost-input { min-height: 38px; padding: 8px; font-variant-numeric: tabular-nums; }
+    .note-input { font-size: 14px; }
+    .no-action { background: var(--teal-soft); }
+    .no-action .item-name { color: var(--teal); }
+    .deleted-note { padding: 10px 11px; color: var(--muted); font-size: 12px; }
+    .panel-card, .deal-card, .summary-card { padding: 12px; }
+    .empty-state {
+      padding: 24px 12px;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 650;
+    }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .photo-card { margin: 0; }
+    .photo-card img { width: 100%; height: 128px; object-fit: cover; display: block; background: #d7dee8; }
+    .photo-card .body { padding: 9px; display: grid; gap: 7px; }
+    .photo-card input { min-height: 34px; padding: 7px; }
+    .deal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .deal-result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+    .result-tile { border: 1px solid var(--line); background: #f8fbff; border-radius: var(--radius); padding: 10px; }
+    .result-tile strong { display: block; font-size: 19px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .result-tile.good strong { color: var(--teal); }
+    .result-tile.bad strong { color: var(--red); }
+    .summary-card h3, .deal-card h3, .panel-card h3 { margin: 0 0 10px; font-size: 16px; }
+    .summary-row { justify-content: space-between; border-top: 1px solid #e8eef5; padding: 9px 0; }
+    .summary-row:first-of-type { border-top: 0; }
+    .bar-mini { width: 100%; height: 7px; border-radius: 999px; overflow: hidden; background: #e7edf4; margin-top: 6px; }
+    .bar-mini span { display: block; height: 100%; background: var(--teal); }
+    .drawer, .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: rgba(8, 14, 24, 0.58);
+      display: flex;
+    }
+    .drawer-panel {
+      width: min(420px, 92vw);
+      height: 100%;
+      background: #fff;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal { align-items: flex-end; justify-content: center; padding: 12px; }
+    .modal-panel {
+      width: min(560px, 100%);
+      max-height: min(86vh, 760px);
+      overflow-y: auto;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .drawer-head, .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 13px; border-bottom: 1px solid var(--line); }
+    .drawer-head h2, .modal-head h2 { margin: 0; font-size: 18px; }
+    .drawer-body { overflow-y: auto; padding: 10px; flex: 1; }
+    .project-row, .price-row, .room-option {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 10px;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .project-row.active { border-color: var(--blue); background: #f2f7ff; }
+    .project-row strong, .price-row strong, .room-option strong { display: block; }
+    .project-row span, .price-row span, .room-option span { color: var(--muted); font-size: 12px; font-weight: 650; }
+    .price-row { display: grid; grid-template-columns: 1fr 98px; gap: 9px; align-items: center; }
+    .toast {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 90;
+      background: #172033;
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      font-weight: 700;
+      transform: translateY(120%);
+      transition: transform .22s ease;
+    }
+    .toast.show { transform: translateY(0); }
+    .hide { display: none !important; }
+    @media (min-width: 720px) {
+      .main { padding: 16px; }
+      .scope-layout { display: grid; grid-template-columns: 250px 1fr; gap: 12px; align-items: start; }
+      .chip-row { display: block; margin: 0; padding: 0; overflow: visible; }
+      .chip { width: 100%; justify-content: flex-start; margin-bottom: 7px; max-width: none; }
+      .tabs { max-width: 560px; }
+      .modal { align-items: center; }
+      .deal-grid, .deal-result-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast" class="toast"></div>
+  <script>
+  (() => {
+    "use strict";
+
+    const STORAGE_KEY = "sparkScopeProjects_v1";
+    const GLOBAL_PRICE_KEY = "sparkScopePriceBook_v1";
+    const todayIso = () => new Date().toISOString().slice(0, 10);
+    const uid = (prefix = "id") => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const money = value => "$" + Math.round(Number(value) || 0).toLocaleString("en-US");
+    const money2 = value => "$" + (Number(value) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const pct = value => `${Math.round((Number(value) || 0) * 100)}%`;
+    const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    const appEl = document.getElementById("app");
+    const toastEl = document.getElementById("toast");
+    let deferredInstallPrompt = null;
+
+    const RAW_PRICE_CSV = `id,name,cost,unit
+ig-01,Refinish Hardwood Floor,2.35,sqft
+ig-02,"New Hardwoods 1.5""",10.00,sqft
+ig-03,"New Hardwoods 2""",4.75,sqft
+ig-04,Hardwood Splicing,8.40,sqft
+ig-05,Vinyl Plank,2.50,sqft
+ig-06,Carpet,1.90,sqft
+ig-07,Interior Paint - 2 Tone,2.95,sqft
+ig-08,Drywall Repair,900.00,"1,000 sqft"
+ig-09,Wallpaper Removal,250.00,room
+ig-10,Interior Door - Hollow Slab,125.00,ea.
+ig-11,Interior Door Hardware (Knob + Hinges + Labor),25.00,ea.
+ig-12,Bifold Door with Framing,400.00,ea.
+ig-13,Interior Door - Pre-hung,200.00,ea.
+ig-14,Front Entry Door,475.00,ea.
+ig-15,Front Entry Door Hardware,80.00,ea.
+ig-16,Exterior Door Hardware,75.00,handle
+ig-17,Exterior Insulated Side Door (Installed),500.00,ea.
+ig-18,Sliding Glass Door,1025.00,ea.
+ig-19,"Trim Out (Casing, Crown, Baseboard)",3.75,LF
+ig-20,MISC / Punch List,2650.00,flat
+ig-21,Finish Out Labor,1350.00,flat
+ig-22,Light Fixtures,70.00,"100 sqft"
+ig-23,Bedbug Spray / Heat Treat,475.00,ea.
+ig-24,Termite Treatment,650.00,ea.
+ig-25,Demo,1375.00,variable
+ig-26,Haul Off,725.00,load
+ig-27,Final Cleaning,325.00,flat
+ig-28,Staging,0.90,sqft
+kt-01,Hinges and Pulls,275.00,kitchen
+kt-02,Cabinets Uppers,125.00,LF
+kt-03,Cabinets Lowers,150.00,LF
+kt-04,Cabinet Door Faces Only,80.00,door
+kt-05,Cabinets (Labor & Paint),1100.00,kitchen
+kt-06,"Granite + 4"" Splash Guard",40.00,LF
+kt-07,Backsplash,725.00,house
+kt-08,Misc Woodwork,500.00,variable
+kt-09,Tile - Large Areas,6.45,sqft
+kt-10,Tile - Small Areas,10.00,sqft
+kt-11,Undermount Kitchen Sink,325.00,ea.
+kt-12,Microwave / Hood,500.00,ea.
+kt-13,Range,725.00,ea.
+kt-14,Wall Oven,1075.00,ea.
+kt-15,Cooktop,550.00,ea.
+kt-16,Dishwasher,575.00,ea.
+kt-17,Fridge,1175.00,ea.
+ba-01,Granite ($/LF),35.00,LF
+ba-02,New Bottom Vanity,125.00,LF
+ba-03,"Home Depot Vanity w/ Sink (18"")",225.00,ea.
+ba-04,Toilet,150.00,ea.
+ba-05,Tile - Large Areas,5.80,sqft
+ba-06,Tile - Small Areas,10.00,sqft
+ba-07,Reglaze Tub or Chemical Clean,350.00,ea.
+ba-08,Reglaze Tub + Surround,750.00,ea.
+ba-09,Reglaze Shower,1325.00,ea.
+ba-10,Tiled Shower Tear Out + Tile Install,3100.00,ea.
+ba-11,Tub Tile Surround Tear Out + Tile Install (incl. tub),2250.00,ea.
+ba-12,Shower Plastic Insert Tear Out + New Insert,825.00,ea.
+ba-13,Tub Tear Out + New Insert & Tub,1575.00,ea.
+ba-14,Undermount Sink,150.00,ea.
+ba-15,Mirror,200.00,ea.
+ba-16,HVL (needed if no window),275.00,ea.
+as-01,Furnace,3350.00,ea.
+as-02,Condensing Unit,3300.00,ea.
+as-03,Package Unit,4700.00,ea.
+as-04,A-Coil (if no condensing unit),1625.00,ea.
+as-05,Ducting (if NO HVAC),3200.00,ea.
+as-06,Duct Cleaning - Floor Vents,550.00,ea.
+as-07,Window Unit Replacement 220,575.00,ea.
+as-08,Hot Water Heater w/ Expansion Tank,1425.00,ea.
+as-09,Hot Water Heater Expansion Tank Only,200.00,ea.
+as-10,Switches / Outlets,1400.00,house
+as-11,Standard Electrical,1650.00,house
+as-12,Subfloor,8.20,sqft
+as-13,Framing,950.00,variable
+as-14,Structural (Pier),375.00,pier
+as-15,Structural Foam Injection,5.85,sqft of affected area
+as-16,Roof,1100.00,225 sqft L&M
+as-17,Plumbing,1000.00,variable
+as-18,Electrical Panel Swap to 200A,2350.00,ea.
+as-19,Full Electrical Rewire (to Studs),5.65,sqft
+as-20,Full Electrical Rewire (leaving Drywall),9.15,sqft
+as-21,Wall Insulation (to Studs),1.20,sqft
+as-22,Attic Insulation,1225.00,"1,600 sqft house"
+as-23,New Drywall to Studs (L&M),5.20,sqft
+as-24,Aluminum Wiring,2450.00,variable
+ex-01,Fence Repair - Chain Link / Wood Gate,225.00,variable
+ex-02,Fence Repair - Chain Link,275.00,LF
+ex-03,Fence Repair - Privacy 6ft,30.00,LF
+ex-04,Landscaping,450.00,variable
+ex-05,Vinyl Siding (10'x10'),300.00,square
+ex-06,Tuck Pointing,225.00,variable
+ex-07,Exterior Paint,2.60,sqft
+ex-08,Exterior Wood Repair,525.00,variable
+ex-09,Siding Repair (10'x10'),975.00,section
+ex-10,Tree Trimming,450.00,variable
+ex-11,Tree Removal (w/o stump),1450.00,tree
+ex-12,Stump Grinding,250.00,stump
+ex-13,Aluminum Window Paint (Int/Ext),700.00,house
+ex-14,Windows (3x5 sash),425.00,ea.
+ex-15,Window Repair - Non-Insulated (6x6+),35.00,sf
+ex-16,Window Repair - Insulated (6x6+),40.00,sf
+ex-17,Aluminum Framed Window Pane,100.00,pane
+ex-18,Guttering,4.15,LF
+ex-19,Concrete w/ Demo,200.00,sqft
+ex-20,Mowing (summer, every 2 weeks),45.00,mowing
+ex-21,Garage Door - 1 Car,975.00,ea.
+ex-22,Garage Door - 2 Car (Installed),1225.00,ea.
+ex-23,Garage Conversion,8850.00,ea.`;
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], field = "", quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i], next = text[i + 1];
+        if (quoted) {
+          if (ch === '"' && next === '"') { field += '"'; i++; }
+          else if (ch === '"') quoted = false;
+          else field += ch;
+        } else if (ch === '"') quoted = true;
+        else if (ch === ",") { row.push(field); field = ""; }
+        else if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+        else if (ch !== "\r") field += ch;
+      }
+      row.push(field); rows.push(row);
+      const header = rows.shift().map(h => h.trim());
+      return rows.filter(r => r.some(Boolean)).map(r => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? "").trim()])));
+    }
+
+    const BASE_ITEMS = parseCSV(RAW_PRICE_CSV).map(row => ({
+      id: row.id,
+      name: row.name,
+      cost: Number(row.cost) || 0,
+      unit: row.unit,
+      source: "price-list"
+    }));
+    const ITEM_BY_ID = Object.fromEntries(BASE_ITEMS.map(item => [item.id, item]));
+
+    const GROUP_DEFS = [
+      { id: "ig-flooring", section: "Interior / General", name: "Flooring", itemIds: ["ig-01","ig-02","ig-03","ig-04","ig-05","ig-06","ig-28"] },
+      { id: "ig-paint", section: "Interior / General", name: "Paint & Wall Repair", itemIds: ["ig-07","ig-08","ig-09","ig-20","ig-21","ig-25","ig-26","ig-27"] },
+      { id: "ig-doors", section: "Interior / General", name: "Doors", itemIds: ["ig-10","ig-11","ig-12","ig-13","ig-14","ig-15","ig-16","ig-17","ig-18","ig-19","ig-22"] },
+      { id: "ig-pest", section: "Interior / General", name: "Pest Control", itemIds: ["ig-23","ig-24"] },
+      { id: "kt-cabinets", section: "Kitchen", name: "Cabinets", itemIds: ["kt-01","kt-02","kt-03","kt-04","kt-05"] },
+      { id: "kt-counters", section: "Kitchen", name: "Countertops & Tile", itemIds: ["kt-06","kt-07","kt-08","kt-09","kt-10"] },
+      { id: "kt-appliances", section: "Kitchen", name: "Appliances", itemIds: ["kt-11","kt-12","kt-13","kt-14","kt-15","kt-16","kt-17"] },
+      { id: "ba-vanity", section: "Bathrooms", name: "Vanity & Countertop", itemIds: ["ba-01","ba-02","ba-03","ba-04","ba-14","ba-15"] },
+      { id: "ba-tub", section: "Bathrooms", name: "Tub & Shower", itemIds: ["ba-07","ba-08","ba-09","ba-10","ba-11","ba-12","ba-13","ba-16"] },
+      { id: "ba-tile", section: "Bathrooms", name: "Tile", itemIds: ["ba-05","ba-06"] },
+      { id: "as-hvac", section: "Systems & Structure", name: "HVAC", itemIds: ["as-01","as-02","as-03","as-04","as-05","as-06","as-07","as-08","as-09"] },
+      { id: "as-electrical", section: "Systems & Structure", name: "Electrical", itemIds: ["as-10","as-11","as-18","as-19","as-20","as-24"] },
+      { id: "as-structural", section: "Systems & Structure", name: "Structural", itemIds: ["as-12","as-13","as-14","as-15","as-16","as-17"] },
+      { id: "as-insulation", section: "Systems & Structure", name: "Insulation & Drywall", itemIds: ["as-21","as-22","as-23"] },
+      { id: "ex-fence", section: "Exterior", name: "Fence", itemIds: ["ex-01","ex-02","ex-03"] },
+      { id: "ex-siding", section: "Exterior", name: "Siding", itemIds: ["ex-04","ex-05","ex-06","ex-07","ex-08","ex-09","ex-18","ex-19","ex-20"] },
+      { id: "ex-windows", section: "Exterior", name: "Windows", itemIds: ["ex-13","ex-14","ex-15","ex-16","ex-17"] },
+      { id: "ex-garage", section: "Exterior", name: "Garage", itemIds: ["ex-21","ex-22","ex-23"] },
+      { id: "ex-trees", section: "Exterior", name: "Trees", itemIds: ["ex-10","ex-11","ex-12"] }
+    ];
+    const GROUP_BY_ID = Object.fromEntries(GROUP_DEFS.map(group => [group.id, group]));
+    const OFFICIAL_GROUP_COUNT = GROUP_DEFS.length;
+
+    const ROOM_ITEM_FILTERS = {
+      bedroom: {
+        "ig-flooring": ["ig-01","ig-02","ig-03","ig-04","ig-05","ig-06"],
+        "ig-paint": ["ig-07","ig-08"],
+        "ig-doors": ["ig-10","ig-11","ig-12","ig-13","ig-19","ig-22"]
+      },
+      living: {
+        "ig-flooring": ["ig-01","ig-02","ig-03","ig-04","ig-05","ig-06"],
+        "ig-paint": ["ig-07","ig-08","ig-20","ig-21"],
+        "ig-doors": ["ig-10","ig-11","ig-12","ig-13","ig-19","ig-22"]
+      }
+    };
+
+    const SPACE_TYPES = {
+      interior: { label: "Interior / General", short: "Interior", groups: ["ig-flooring","ig-paint","ig-doors","ig-pest"] },
+      kitchen: { label: "Kitchen", short: "Kitchen", groups: ["kt-cabinets","kt-counters","kt-appliances"] },
+      bathroom: { label: "Bathroom", short: "Bath", groups: ["ba-vanity","ba-tub","ba-tile"] },
+      systems: { label: "Systems & Structure", short: "Systems", groups: ["as-hvac","as-electrical","as-structural","as-insulation"] },
+      exterior: { label: "Exterior", short: "Exterior", groups: ["ex-fence","ex-siding","ex-windows","ex-garage","ex-trees"] },
+      bedroom: { label: "Bedroom", short: "Bedroom", groups: ["ig-flooring","ig-paint","ig-doors"] },
+      living: { label: "Living / Common Area", short: "Living", groups: ["ig-flooring","ig-paint","ig-doors"] }
+    };
+
+    let model = {
+      projects: [],
+      activeId: "",
+      globalPrices: {},
+      view: "scope",
+      selectedSpaceId: "",
+      expanded: {},
+      projectsOpen: false,
+      settingsOpen: false,
+      roomPickerOpen: false,
+      addItemContext: null,
+      priceSearch: "",
+      pendingPhotoContext: null
+    };
+
+    function defaultSpaces() {
+      return [
+        { id: uid("space"), type: "interior", name: "Interior / General" },
+        { id: uid("space"), type: "kitchen", name: "Kitchen 1" },
+        { id: uid("space"), type: "bathroom", name: "Bathroom 1" },
+        { id: uid("space"), type: "systems", name: "Systems & Structure" },
+        { id: uid("space"), type: "exterior", name: "Exterior" },
+        { id: uid("space"), type: "bedroom", name: "Bedroom 1" },
+        { id: uid("space"), type: "living", name: "Living / Common Area 1" }
+      ];
+    }
+
+    function defaultDeal() {
+      return {
+        arv: "",
+        purchase: "",
+        sqft: "",
+        holdingMonths: 3,
+        holdingMonthly: 950,
+        sellingPct: 8,
+        contingencyPct: 10,
+        targetProfit: 30000
+      };
+    }
+
+    function createProject(name = "Tulsa Walkthrough") {
+      const spaces = defaultSpaces();
+      return {
+        id: uid("project"),
+        name,
+        address: "",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        spaces,
+        selections: {},
+        customItems: {},
+        photos: [],
+        deal: defaultDeal()
+      };
+    }
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (saved && Array.isArray(saved.projects)) {
+          model.projects = saved.projects;
+          model.activeId = saved.activeId || saved.projects[0]?.id || "";
+        }
+      } catch {}
+      try { model.globalPrices = JSON.parse(localStorage.getItem(GLOBAL_PRICE_KEY) || "{}"); } catch { model.globalPrices = {}; }
+      if (!model.projects.length) {
+        const first = createProject();
+        model.projects = [first];
+        model.activeId = first.id;
+      }
+      const p = activeProject();
+      model.selectedSpaceId = p.spaces[0]?.id || "";
+      save();
+    }
+
+    function save() {
+      const payload = { activeId: model.activeId, projects: model.projects };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        localStorage.setItem(GLOBAL_PRICE_KEY, JSON.stringify(model.globalPrices));
+      } catch (err) {
+        showToast("Storage is full. Remove old photos or export this project.");
+      }
+    }
+
+    function activeProject() {
+      return model.projects.find(p => p.id === model.activeId) || model.projects[0];
+    }
+
+    function touchProject(project = activeProject()) {
+      project.updatedAt = new Date().toISOString();
+    }
+
+    function stateKey(spaceId, groupId, itemId) {
+      return `${spaceId}__${groupId}__${itemId}`;
+    }
+
+    function customBucketKey(spaceId, groupId) {
+      return `${spaceId}__${groupId}`;
+    }
+
+    function getSelection(project, key, create = false) {
+      if (!project.selections[key] && create) project.selections[key] = { checked: false, qty: "", costOverride: "", notes: "", deleted: false };
+      return project.selections[key] || {};
+    }
+
+    function groupItemIds(space, groupId) {
+      return ROOM_ITEM_FILTERS[space.type]?.[groupId] || GROUP_BY_ID[groupId].itemIds;
+    }
+
+    function customItems(project, spaceId, groupId) {
+      return project.customItems[customBucketKey(spaceId, groupId)] || [];
+    }
+
+    function itemCost(item, selection = {}) {
+      if (selection.costOverride !== "" && selection.costOverride !== undefined && !Number.isNaN(Number(selection.costOverride))) return Number(selection.costOverride);
+      if (model.globalPrices[item.id] !== undefined && !Number.isNaN(Number(model.globalPrices[item.id]))) return Number(model.globalPrices[item.id]);
+      return Number(item.cost) || 0;
+    }
+
+    function defaultQty(item) {
+      const unit = (item.unit || "").toLowerCase();
+      if (unit.includes("sqft") || unit === "lf" || unit === "sf" || unit === "pier") return "";
+      return "1";
+    }
+
+    function lineTotal(item, selection = {}) {
+      if (!selection.checked || selection.deleted) return 0;
+      const qty = Number(selection.qty);
+      if (!Number.isFinite(qty)) return 0;
+      return qty * itemCost(item, selection);
+    }
+
+    function groupState(project, space, groupId) {
+      const group = GROUP_BY_ID[groupId];
+      const ids = groupItemIds(space, groupId);
+      const custom = customItems(project, space.id, groupId);
+      const allKeys = [
+        stateKey(space.id, groupId, "__no_action__"),
+        ...ids.map(id => stateKey(space.id, groupId, id)),
+        ...custom.map(item => stateKey(space.id, groupId, item.id))
+      ];
+      let total = 0, selected = 0, visible = ids.length + custom.filter(i => !getSelection(project, stateKey(space.id, groupId, i.id)).deleted).length;
+      for (const id of ids) {
+        const item = ITEM_BY_ID[id];
+        const st = getSelection(project, stateKey(space.id, groupId, id));
+        if (!st.deleted) total += lineTotal(item, st);
+        if (st.checked && !st.deleted) selected++;
+      }
+      for (const item of custom) {
+        const st = getSelection(project, stateKey(space.id, groupId, item.id));
+        if (!st.deleted) total += lineTotal(item, st);
+        if (st.checked && !st.deleted) selected++;
+      }
+      const noAction = !!getSelection(project, stateKey(space.id, groupId, "__no_action__")).checked;
+      return { group, total, selected, complete: noAction || selected > 0, noAction, visible, allKeys };
+    }
+
+    function projectStats(project = activeProject()) {
+      let total = 0, checkedGroups = 0, totalGroups = 0, checkedItems = 0, selectedRows = 0;
+      for (const space of project.spaces) {
+        for (const groupId of SPACE_TYPES[space.type].groups) {
+          const gs = groupState(project, space, groupId);
+          totalGroups++;
+          if (gs.complete) checkedGroups++;
+          total += gs.total;
+          checkedItems += gs.selected;
+          selectedRows += gs.selected;
+        }
+      }
+      return {
+        total,
+        checkedGroups,
+        totalGroups,
+        checkedItems,
+        selectedRows,
+        progress: totalGroups ? checkedGroups / totalGroups : 0
+      };
+    }
+
+    function dealMath(project = activeProject()) {
+      const stats = projectStats(project);
+      const d = project.deal || defaultDeal();
+      const arv = Number(d.arv) || 0;
+      const purchase = Number(d.purchase) || 0;
+      const repairs = stats.total;
+      const contingency = repairs * ((Number(d.contingencyPct) || 0) / 100);
+      const holding = (Number(d.holdingMonths) || 0) * (Number(d.holdingMonthly) || 0);
+      const selling = arv * ((Number(d.sellingPct) || 0) / 100);
+      const targetProfit = Number(d.targetProfit) || 0;
+      const totalBasis = purchase + repairs + contingency + holding + selling;
+      const projectedProfit = arv - totalBasis;
+      const maxOffer = arv - repairs - contingency - holding - selling - targetProfit;
+      const sqft = Number(d.sqft) || 0;
+      return { arv, purchase, repairs, contingency, holding, selling, targetProfit, totalBasis, projectedProfit, maxOffer, repairPerSqft: sqft ? repairs / sqft : 0 };
+    }
+
+    function render() {
+      const project = activeProject();
+      if (!project.spaces.some(s => s.id === model.selectedSpaceId)) model.selectedSpaceId = project.spaces[0]?.id || "";
+      const stats = projectStats(project);
+      appEl.innerHTML = `
+        <div class="shell">
+          <header class="topbar">
+            <div class="top-row">
+              <div class="brand">
+                <div class="mark">S</div>
+                <div>
+                  <h1>SparkScope</h1>
+                  <small>${esc(project.name || "Untitled Project")}</small>
+                </div>
+              </div>
+              <div class="top-actions">
+                <button class="icon-btn" data-action="open-projects" title="Projects">P</button>
+                <button class="icon-btn" data-action="open-settings" title="Price book">$</button>
+                <button class="icon-btn" data-action="export" title="Export">EX</button>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div>
+                <p class="total-label">Running total</p>
+                <p class="total-value" id="runningTotal">${money(stats.total)}</p>
+              </div>
+              <div class="metric-pill">
+                <div id="progressText">${stats.checkedGroups}/${stats.totalGroups} groups</div>
+                <div>${stats.checkedItems} selected</div>
+              </div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:${Math.round(stats.progress * 100)}%"></div></div>
+          </header>
+          <main class="main">
+            ${renderProjectStrip(project)}
+            <div class="tabs">
+              ${["scope","photos","deal","summary"].map(v => `<button class="tab ${model.view === v ? "active" : ""}" data-action="set-view" data-view="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join("")}
+            </div>
+            ${model.view === "scope" ? renderScope(project) : ""}
+            ${model.view === "photos" ? renderPhotos(project) : ""}
+            ${model.view === "deal" ? renderDeal(project) : ""}
+            ${model.view === "summary" ? renderSummary(project) : ""}
+          </main>
+          ${model.projectsOpen ? renderProjectsDrawer(project) : ""}
+          ${model.settingsOpen ? renderSettings() : ""}
+          ${model.roomPickerOpen ? renderRoomPicker() : ""}
+          ${model.addItemContext ? renderAddItemModal() : ""}
+          <input id="photoInput" class="hide" type="file" accept="image/*" capture="environment" multiple>
+        </div>`;
+    }
+
+    function renderProjectStrip(project) {
+      return `
+        <section class="project-strip">
+          <div class="project-name">
+            <label class="mini-label" for="projectName">Project</label>
+            <input id="projectName" data-field="project-name" value="${esc(project.name)}" autocomplete="off">
+          </div>
+          <div class="field" style="margin-top:8px">
+            <label for="projectAddress">Address / lead notes</label>
+            <textarea id="projectAddress" data-field="project-address" rows="1" placeholder="Property address, access notes, or seller context">${esc(project.address || "")}</textarea>
+          </div>
+          <div class="toolbar-row">
+            <button class="primary-btn" data-action="open-room-picker">+ Add room</button>
+            <button class="ghost-btn" data-action="install-app">Install</button>
+            <button class="ghost-btn" data-action="capture-photo">Add photo</button>
+            <button class="ghost-btn" data-action="export">Export ZIP</button>
+          </div>
+        </section>`;
+    }
+
+    function renderScope(project) {
+      const selected = project.spaces.find(s => s.id === model.selectedSpaceId) || project.spaces[0];
+      if (!selected) return `<div class="empty-state">Add a room to begin.</div>`;
+      return `
+        <section class="scope-layout">
+          <aside class="chip-row">
+            ${project.spaces.map(space => {
+              const total = spaceTotal(project, space);
+              const complete = spaceProgress(project, space);
+              return `<button class="chip ${space.id === selected.id ? "active" : ""}" data-action="select-space" data-space-id="${space.id}">
+                <span>${esc(space.name)}</span>${total ? `<b>${money(total)}</b>` : `<b>${Math.round(complete * 100)}%</b>`}
+              </button>`;
+            }).join("")}
+          </aside>
+          <div>
+            <div class="section-head">
+              <div>
+                <h2>${esc(selected.name)}</h2>
+                <p>${esc(SPACE_TYPES[selected.type].label)} - ${SPACE_TYPES[selected.type].groups.length} groups</p>
+              </div>
+              <div class="top-actions">
+                <button class="small-btn" data-action="rename-space" data-space-id="${selected.id}">Rename</button>
+                <button class="small-btn" data-action="remove-space" data-space-id="${selected.id}">Remove</button>
+              </div>
+            </div>
+            ${SPACE_TYPES[selected.type].groups.map((groupId, i) => renderGroup(project, selected, groupId, i)).join("")}
+          </div>
+        </section>`;
+    }
+
+    function renderGroup(project, space, groupId, index) {
+      const gs = groupState(project, space, groupId);
+      const expandedKey = `${space.id}:${groupId}`;
+      const isExpanded = model.expanded[expandedKey] ?? (index === 0);
+      const hidden = groupItemIds(space, groupId).filter(id => getSelection(project, stateKey(space.id, groupId, id)).deleted).length;
+      return `
+        <article class="group-card" data-group-card="${expandedKey}">
+          <button class="group-head" data-action="toggle-group" data-group-key="${expandedKey}" data-expanded="${isExpanded ? "1" : "0"}">
+            <div>
+              <div class="group-title">${esc(space.name)}: ${esc(gs.group.name)}</div>
+              <div class="group-meta" data-group-meta>${gs.complete ? "Reviewed" : "Open"} - ${gs.selected} repair item${gs.selected === 1 ? "" : "s"}</div>
+            </div>
+            <div class="group-total" data-group-total="${expandedKey}">${gs.total ? money(gs.total) : "-"}</div>
+            <div class="chev">${isExpanded ? "^" : "v"}</div>
+          </button>
+          ${isExpanded ? `<div class="group-body">
+            ${renderNoAction(project, space, groupId)}
+            ${groupItemIds(space, groupId).map(id => renderItem(project, space, groupId, ITEM_BY_ID[id], false)).join("")}
+            ${customItems(project, space.id, groupId).map(item => renderItem(project, space, groupId, item, true)).join("")}
+            <div class="item-actions" style="padding:10px 11px; justify-content:space-between">
+              <button class="small-btn good" data-action="add-custom-item" data-space-id="${space.id}" data-group-id="${groupId}">+ Add item</button>
+              ${hidden ? `<button class="small-btn warn" data-action="restore-items" data-space-id="${space.id}" data-group-id="${groupId}">Restore ${hidden}</button>` : ""}
+            </div>
+          </div>` : ""}
+        </article>`;
+    }
+
+    function renderNoAction(project, space, groupId) {
+      const key = stateKey(space.id, groupId, "__no_action__");
+      const st = getSelection(project, key);
+      return `
+        <div class="line-item no-action">
+          <div class="line-main">
+            <input type="checkbox" data-action="toggle-no-action" data-space-id="${space.id}" data-group-id="${groupId}" ${st.checked ? "checked" : ""}>
+            <div>
+              <div class="item-name">No Action Needed</div>
+              <div class="item-sub">Marks this group reviewed with no repair cost.</div>
+            </div>
+            <div class="line-total zero">-</div>
+          </div>
+        </div>`;
+    }
+
+    function renderItem(project, space, groupId, item, custom) {
+      const key = stateKey(space.id, groupId, item.id);
+      const st = getSelection(project, key);
+      if (st.deleted) return "";
+      const checked = !!st.checked;
+      const total = lineTotal(item, st);
+      const cost = itemCost(item, st);
+      const overridden = st.costOverride !== "" && st.costOverride !== undefined;
+      return `
+        <div class="line-item" data-item-row="${key}">
+          <div class="line-main">
+            <input type="checkbox" data-action="toggle-item" data-space-id="${space.id}" data-group-id="${groupId}" data-item-id="${item.id}" ${checked ? "checked" : ""}>
+            <div>
+              <div class="item-name">${esc(item.name)}</div>
+              <div class="item-sub">${esc(item.id)} - ${esc(item.unit)} - ${money2(cost)}${overridden ? " project override" : ""}</div>
+            </div>
+            <div class="line-total ${total ? "" : "zero"}" data-line-total="${key}">${total ? money(total) : "-"}</div>
+          </div>
+          ${checked ? `<div class="item-detail">
+            <div class="field-grid">
+              <div class="field">
+                <label>Quantity</label>
+                <input class="qty-input" type="number" inputmode="decimal" min="0" step="0.01" data-field="qty" data-key="${key}" value="${esc(st.qty ?? "")}" placeholder="${esc(item.unit)}">
+              </div>
+              <div class="field">
+                <label>Unit cost</label>
+                <input class="cost-input" type="number" inputmode="decimal" min="0" step="0.01" data-field="unit-cost" data-key="${key}" value="${esc(cost)}">
+              </div>
+            </div>
+            <div class="field">
+              <label>Notes / scope detail</label>
+              <textarea class="note-input" data-field="notes" data-key="${key}" rows="1" placeholder="Condition, room measurement, or decision note">${esc(st.notes || "")}</textarea>
+            </div>
+            <div class="item-actions">
+              ${overridden ? `<button class="small-btn" data-action="clear-cost" data-key="${key}">Use standard cost</button>` : ""}
+              <button class="small-btn" data-action="item-photo" data-space-id="${space.id}" data-group-id="${groupId}" data-item-id="${item.id}">Photo</button>
+              <button class="small-btn danger" data-action="delete-item" data-space-id="${space.id}" data-group-id="${groupId}" data-item-id="${item.id}" data-custom="${custom ? "1" : "0"}">Delete</button>
+            </div>
+          </div>` : ""}
+        </div>`;
+    }
+
+    function renderPhotos(project) {
+      return `
+        <section class="panel-card">
+          <div class="section-head" style="margin:0 0 10px">
+            <div>
+              <h2>Photos</h2>
+              <p>${project.photos.length} saved to this project</p>
+            </div>
+            <button class="primary-btn" data-action="capture-photo">Add photo</button>
+          </div>
+          ${project.photos.length ? `<div class="photo-grid">${project.photos.map(photo => renderPhoto(project, photo)).join("")}</div>` : `<div class="empty-state">No photos yet.</div>`}
+        </section>`;
+    }
+
+    function renderPhoto(project, photo) {
+      return `
+        <article class="photo-card">
+          <img src="${photo.dataUrl}" alt="${esc(photo.name || "Project photo")}">
+          <div class="body">
+            <strong>${esc(photo.targetLabel || "Project photo")}</strong>
+            <span class="item-sub">${esc(photo.name || "Camera upload")}</span>
+            <div>
+              <label class="mini-label">Serial</label>
+              <input data-field="photo-serial" data-photo-id="${photo.id}" value="${esc(photo.serial || "")}" placeholder="Serial number">
+            </div>
+            <button class="small-btn danger" data-action="remove-photo" data-photo-id="${photo.id}">Remove</button>
+          </div>
+        </article>`;
+    }
+
+    function renderDeal(project) {
+      const d = project.deal || defaultDeal();
+      const m = dealMath(project);
+      const profitClass = m.projectedProfit >= 0 ? "good" : "bad";
+      return `
+        <section class="deal-card">
+          <h3>Deal Analyzer</h3>
+          <div class="deal-grid">
+            ${dealField("ARV", "arv", d.arv, "After repair value")}
+            ${dealField("Purchase", "purchase", d.purchase, "Current offer / contract")}
+            ${dealField("Sqft", "sqft", d.sqft, "Property size")}
+            ${dealField("Target profit", "targetProfit", d.targetProfit, "Minimum profit")}
+            ${dealField("Holding months", "holdingMonths", d.holdingMonths, "Months")}
+            ${dealField("Monthly hold", "holdingMonthly", d.holdingMonthly, "Taxes, utilities, debt")}
+            ${dealField("Selling %", "sellingPct", d.sellingPct, "Closing + resale")}
+            ${dealField("Contingency %", "contingencyPct", d.contingencyPct, "Repair buffer")}
+          </div>
+          <div class="deal-result-grid">
+            <div class="result-tile"><span class="mini-label">Repair total</span><strong>${money(m.repairs)}</strong></div>
+            <div class="result-tile"><span class="mini-label">Max offer</span><strong>${money(m.maxOffer)}</strong></div>
+            <div class="result-tile ${profitClass}"><span class="mini-label">Projected profit</span><strong>${money(m.projectedProfit)}</strong></div>
+            <div class="result-tile"><span class="mini-label">Repair / sqft</span><strong>${m.repairPerSqft ? money2(m.repairPerSqft) : "-"}</strong></div>
+          </div>
+        </section>`;
+    }
+
+    function dealField(label, key, value, placeholder) {
+      return `<div class="field"><label>${esc(label)}</label><input type="number" inputmode="decimal" step="0.01" min="0" data-field="deal" data-deal-key="${key}" value="${esc(value ?? "")}" placeholder="${esc(placeholder)}"></div>`;
+    }
+
+    function renderSummary(project) {
+      const stats = projectStats(project);
+      const m = dealMath(project);
+      const sectionTotals = {};
+      for (const space of project.spaces) {
+        for (const groupId of SPACE_TYPES[space.type].groups) {
+          const gs = groupState(project, space, groupId);
+          sectionTotals[gs.group.section] = (sectionTotals[gs.group.section] || 0) + gs.total;
+        }
+      }
+      return `
+        <section class="summary-card">
+          <h3>Walkthrough Summary</h3>
+          <div class="summary-row"><span>Total estimate</span><strong>${money(stats.total)}</strong></div>
+          <div class="summary-row"><span>Progress</span><strong>${Math.round(stats.progress * 100)}%</strong></div>
+          <div class="summary-row"><span>Reviewed groups</span><strong>${stats.checkedGroups}/${stats.totalGroups}</strong></div>
+          <div class="summary-row"><span>Official repair groups</span><strong>${OFFICIAL_GROUP_COUNT}</strong></div>
+          <div class="summary-row"><span>Projected profit</span><strong>${money(m.projectedProfit)}</strong></div>
+          <div class="bar-mini"><span style="width:${Math.round(stats.progress * 100)}%"></span></div>
+        </section>
+        <section class="summary-card">
+          <h3>Section Totals</h3>
+          ${Object.entries(sectionTotals).map(([section, total]) => `<div class="summary-row"><span>${esc(section)}</span><strong>${money(total)}</strong></div>`).join("")}
+        </section>
+        <section class="summary-card">
+          <h3>Room Totals</h3>
+          ${project.spaces.map(space => `<div class="summary-row"><span>${esc(space.name)}</span><strong>${money(spaceTotal(project, space))}</strong></div>`).join("")}
+        </section>`;
+    }
+
+    function renderProjectsDrawer(project) {
+      return `
+        <div class="drawer" data-action="close-overlays">
+          <aside class="drawer-panel" data-stop>
+            <div class="drawer-head">
+              <h2>Projects</h2>
+              <button class="icon-btn" style="background:#eef3f8;color:#172033" data-action="close-overlays">X</button>
+            </div>
+            <div class="drawer-body">
+              ${model.projects.map(p => {
+                const stats = projectStats(p);
+                return `<button class="project-row ${p.id === project.id ? "active" : ""}" data-action="load-project" data-project-id="${p.id}">
+                  <strong>${esc(p.name)}</strong>
+                  <span>${money(stats.total)} - ${Math.round(stats.progress * 100)}% complete - ${new Date(p.updatedAt).toLocaleDateString()}</span>
+                </button>`;
+              }).join("")}
+              <div class="toolbar-row" style="margin-top:12px">
+                <button class="primary-btn" data-action="new-project">New project</button>
+                <button class="ghost-btn" data-action="duplicate-project">Duplicate</button>
+                <button class="danger-btn" data-action="delete-project">Delete</button>
+              </div>
+            </div>
+          </aside>
+        </div>`;
+    }
+
+    function renderSettings() {
+      const query = model.priceSearch.trim().toLowerCase();
+      const rows = BASE_ITEMS.filter(item => !query || item.name.toLowerCase().includes(query) || item.id.includes(query));
+      return `
+        <div class="modal" data-action="close-overlays">
+          <div class="modal-panel" data-stop>
+            <div class="modal-head" style="padding:0 0 10px">
+              <h2>Price Book</h2>
+              <button class="icon-btn" style="background:#eef3f8;color:#172033" data-action="close-overlays">X</button>
+            </div>
+            <div class="toolbar-row">
+              <label class="primary-btn">
+                Upload CSV
+                <input class="hide" id="priceCsvInput" type="file" accept=".csv,text/csv">
+              </label>
+              <button class="ghost-btn" data-action="reset-global-prices">Reset standard prices</button>
+            </div>
+            <input class="settings-search" style="margin:10px 0" data-field="price-search" value="${esc(model.priceSearch)}" placeholder="Search price list">
+            <div>
+              ${rows.map(item => {
+                const value = model.globalPrices[item.id] ?? item.cost;
+                const changed = model.globalPrices[item.id] !== undefined;
+                return `<div class="price-row">
+                  <div><strong>${esc(item.name)}</strong><span>${esc(item.id)} - ${esc(item.unit)}${changed ? " - updated standard" : ""}</span></div>
+                  <input class="cost-input" type="number" step="0.01" min="0" data-field="global-price" data-item-id="${item.id}" value="${esc(value)}">
+                </div>`;
+              }).join("")}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderRoomPicker() {
+      return `
+        <div class="modal" data-action="close-overlays">
+          <div class="modal-panel" data-stop>
+            <div class="modal-head" style="padding:0 0 10px">
+              <h2>Add Room</h2>
+              <button class="icon-btn" style="background:#eef3f8;color:#172033" data-action="close-overlays">X</button>
+            </div>
+            ${Object.entries(SPACE_TYPES).map(([type, def]) => `<button class="room-option" data-action="add-space" data-type="${type}">
+              <strong>${esc(def.label)}</strong>
+              <span>${def.groups.map(g => GROUP_BY_ID[g].name).join(", ")}</span>
+            </button>`).join("")}
+          </div>
+        </div>`;
+    }
+
+    function renderAddItemModal() {
+      const { spaceId, groupId } = model.addItemContext;
+      const space = activeProject().spaces.find(s => s.id === spaceId);
+      const group = GROUP_BY_ID[groupId];
+      return `
+        <div class="modal" data-action="close-add-item">
+          <div class="modal-panel" data-stop>
+            <div class="modal-head" style="padding:0 0 10px">
+              <h2>Add Item</h2>
+              <button class="icon-btn" style="background:#eef3f8;color:#172033" data-action="close-add-item">X</button>
+            </div>
+            <p class="item-sub" style="margin-top:0">${esc(space.name)}: ${esc(group.name)}</p>
+            <div class="field"><label>Name</label><input id="newItemName" placeholder="Repair item"></div>
+            <div class="field-grid" style="margin-top:8px">
+              <div class="field"><label>Unit</label><input id="newItemUnit" placeholder="ea., sqft, LF"></div>
+              <div class="field"><label>Unit cost</label><input id="newItemCost" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div>
+            </div>
+            <button class="primary-btn" style="width:100%;margin-top:12px" data-action="save-custom-item">Save item</button>
+          </div>
+        </div>`;
+    }
+
+    function spaceTotal(project, space) {
+      return SPACE_TYPES[space.type].groups.reduce((sum, groupId) => sum + groupState(project, space, groupId).total, 0);
+    }
+
+    function spaceProgress(project, space) {
+      const groups = SPACE_TYPES[space.type].groups;
+      if (!groups.length) return 0;
+      return groups.filter(groupId => groupState(project, space, groupId).complete).length / groups.length;
+    }
+
+    function refreshLiveNumbers() {
+      const project = activeProject();
+      const stats = projectStats(project);
+      const totalEl = document.getElementById("runningTotal");
+      const textEl = document.getElementById("progressText");
+      const fillEl = document.getElementById("progressFill");
+      if (totalEl) totalEl.textContent = money(stats.total);
+      if (textEl) textEl.textContent = `${stats.checkedGroups}/${stats.totalGroups} groups`;
+      if (fillEl) fillEl.style.width = `${Math.round(stats.progress * 100)}%`;
+      document.querySelectorAll("[data-line-total]").forEach(el => {
+        const key = el.dataset.lineTotal;
+        const parts = key.split("__");
+        const item = findItem(project, parts[0], parts[1], parts[2]);
+        const total = item ? lineTotal(item, getSelection(project, key)) : 0;
+        el.textContent = total ? money(total) : "-";
+        el.classList.toggle("zero", !total);
+      });
+      document.querySelectorAll("[data-group-total]").forEach(el => {
+        const [spaceId, groupId] = el.dataset.groupTotal.split(":");
+        const space = project.spaces.find(s => s.id === spaceId);
+        if (!space) return;
+        const gs = groupState(project, space, groupId);
+        el.textContent = gs.total ? money(gs.total) : "-";
+        const card = el.closest("[data-group-card]");
+        const meta = card?.querySelector("[data-group-meta]");
+        if (meta) meta.textContent = `${gs.complete ? "Reviewed" : "Open"} - ${gs.selected} repair item${gs.selected === 1 ? "" : "s"}`;
+      });
+    }
+
+    function findItem(project, spaceId, groupId, itemId) {
+      return ITEM_BY_ID[itemId] || customItems(project, spaceId, groupId).find(item => item.id === itemId);
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+    }
+
+    function setChecked(project, spaceId, groupId, itemId, checked) {
+      const key = stateKey(spaceId, groupId, itemId);
+      const st = getSelection(project, key, true);
+      st.checked = checked;
+      if (checked && !st.qty) st.qty = defaultQty(findItem(project, spaceId, groupId, itemId));
+      if (checked) getSelection(project, stateKey(spaceId, groupId, "__no_action__"), true).checked = false;
+      touchProject(project);
+      save();
+    }
+
+    function updateInput(key, field, value) {
+      const project = activeProject();
+      const st = getSelection(project, key, true);
+      if (field === "qty") st.qty = value;
+      if (field === "unit-cost") st.costOverride = value === "" ? "" : Number(value);
+      if (field === "notes") st.notes = value;
+      touchProject(project);
+      save();
+      refreshLiveNumbers();
+    }
+
+    async function addPhotos(files) {
+      const project = activeProject();
+      const context = model.pendingPhotoContext || { spaceId: model.selectedSpaceId };
+      const space = project.spaces.find(s => s.id === context.spaceId);
+      const group = context.groupId ? GROUP_BY_ID[context.groupId] : null;
+      const item = context.itemId ? findItem(project, context.spaceId, context.groupId, context.itemId) : null;
+      const targetLabel = item ? `${space?.name || "Project"}: ${item.name}` : group ? `${space?.name}: ${group.name}` : (space?.name || "Project photo");
+      for (const file of files) {
+        const dataUrl = await resizePhoto(file);
+        const serial = await attemptSerial(dataUrl, file.name);
+        project.photos.push({
+          id: uid("photo"),
+          name: file.name,
+          dataUrl,
+          targetLabel,
+          spaceId: context.spaceId || "",
+          groupId: context.groupId || "",
+          itemId: context.itemId || "",
+          serial,
+          createdAt: new Date().toISOString()
+        });
+      }
+      model.pendingPhotoContext = null;
+      touchProject(project);
+      save();
+      render();
+      showToast("Photo saved");
+    }
+
+    function resizePhoto(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 1400;
+            const ratio = Math.min(1, maxDim / Math.max(img.width, img.height));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(img.width * ratio));
+            canvas.height = Math.max(1, Math.round(img.height * ratio));
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/jpeg", 0.78));
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function attemptSerial(dataUrl, fileName) {
+      const fromName = parseSerialText(fileName);
+      if (fromName) return fromName;
+      try {
+        if ("BarcodeDetector" in window) {
+          const detector = new BarcodeDetector({ formats: ["code_128","code_39","qr_code","data_matrix"] });
+          const blob = await (await fetch(dataUrl)).blob();
+          const bitmap = await createImageBitmap(blob);
+          const results = await detector.detect(bitmap);
+          const parsed = parseSerialText(results.map(r => r.rawValue).join(" "));
+          if (parsed) return parsed;
+        }
+      } catch {}
+      try {
+        if ("TextDetector" in window) {
+          const detector = new TextDetector();
+          const blob = await (await fetch(dataUrl)).blob();
+          const bitmap = await createImageBitmap(blob);
+          const results = await detector.detect(bitmap);
+          const parsed = parseSerialText(results.map(r => r.rawValue || r.text).join(" "));
+          if (parsed) return parsed;
+        }
+      } catch {}
+      return "";
+    }
+
+    function parseSerialText(text) {
+      const cleaned = String(text || "").toUpperCase().replace(/[^A-Z0-9-]/g, " ");
+      const hits = cleaned.match(/\b[A-Z0-9][A-Z0-9-]{5,22}\b/g) || [];
+      return hits.find(hit => /[A-Z]/.test(hit) && /\d/.test(hit)) || "";
+    }
+
+    function importPriceCsv(text) {
+      const rows = parseCSV(text);
+      let count = 0;
+      for (const row of rows) {
+        const id = row.id;
+        const cost = Number(row.cost);
+        if (ITEM_BY_ID[id] && Number.isFinite(cost)) {
+          model.globalPrices[id] = cost;
+          count++;
+        }
+      }
+      save();
+      render();
+      showToast(`${count} standard prices updated`);
+    }
+
+    document.addEventListener("click", event => {
+      const stop = event.target.closest("[data-stop]");
+      if (stop) event.stopPropagation();
+      const btn = event.target.closest("[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const project = activeProject();
+      if (action === "open-projects") { model.projectsOpen = true; render(); }
+      if (action === "open-settings") { model.settingsOpen = true; render(); }
+      if (action === "close-overlays") { model.projectsOpen = model.settingsOpen = model.roomPickerOpen = false; render(); }
+      if (action === "set-view") { model.view = btn.dataset.view; render(); }
+      if (action === "select-space") { model.selectedSpaceId = btn.dataset.spaceId; render(); }
+      if (action === "toggle-group") {
+        const key = btn.dataset.groupKey;
+        model.expanded[key] = btn.dataset.expanded !== "1";
+        render();
+      }
+      if (action === "toggle-item") {
+        setChecked(project, btn.dataset.spaceId, btn.dataset.groupId, btn.dataset.itemId, btn.checked);
+        render();
+      }
+      if (action === "toggle-no-action") {
+        const spaceId = btn.dataset.spaceId, groupId = btn.dataset.groupId;
+        const st = getSelection(project, stateKey(spaceId, groupId, "__no_action__"), true);
+        st.checked = btn.checked;
+        if (btn.checked) {
+          for (const id of groupItemIds(project.spaces.find(s => s.id === spaceId), groupId)) getSelection(project, stateKey(spaceId, groupId, id), true).checked = false;
+          for (const item of customItems(project, spaceId, groupId)) getSelection(project, stateKey(spaceId, groupId, item.id), true).checked = false;
+        }
+        touchProject(project); save(); render();
+      }
+      if (action === "clear-cost") {
+        const st = getSelection(project, btn.dataset.key, true);
+        st.costOverride = "";
+        touchProject(project); save(); render();
+      }
+      if (action === "delete-item") {
+        const key = stateKey(btn.dataset.spaceId, btn.dataset.groupId, btn.dataset.itemId);
+        if (btn.dataset.custom === "1") {
+          const bucket = customBucketKey(btn.dataset.spaceId, btn.dataset.groupId);
+          project.customItems[bucket] = (project.customItems[bucket] || []).filter(item => item.id !== btn.dataset.itemId);
+          delete project.selections[key];
+        } else {
+          getSelection(project, key, true).deleted = true;
+        }
+        touchProject(project); save(); render();
+      }
+      if (action === "restore-items") {
+        for (const id of groupItemIds(project.spaces.find(s => s.id === btn.dataset.spaceId), btn.dataset.groupId)) getSelection(project, stateKey(btn.dataset.spaceId, btn.dataset.groupId, id), true).deleted = false;
+        touchProject(project); save(); render();
+      }
+      if (action === "add-custom-item") {
+        model.addItemContext = { spaceId: btn.dataset.spaceId, groupId: btn.dataset.groupId };
+        render();
+      }
+      if (action === "close-add-item") { model.addItemContext = null; render(); }
+      if (action === "save-custom-item") saveCustomItem();
+      if (action === "open-room-picker") { model.roomPickerOpen = true; render(); }
+      if (action === "add-space") addSpace(btn.dataset.type);
+      if (action === "rename-space") renameSpace(btn.dataset.spaceId);
+      if (action === "remove-space") removeSpace(btn.dataset.spaceId);
+      if (action === "new-project") newProject();
+      if (action === "duplicate-project") duplicateProject();
+      if (action === "delete-project") deleteProject();
+      if (action === "load-project") { model.activeId = btn.dataset.projectId; model.projectsOpen = false; model.selectedSpaceId = activeProject().spaces[0]?.id || ""; save(); render(); }
+      if (action === "reset-global-prices") { model.globalPrices = {}; save(); render(); showToast("Standard prices reset"); }
+      if (action === "capture-photo") { model.pendingPhotoContext = { spaceId: model.selectedSpaceId }; document.getElementById("photoInput")?.click(); }
+      if (action === "item-photo") { model.pendingPhotoContext = { spaceId: btn.dataset.spaceId, groupId: btn.dataset.groupId, itemId: btn.dataset.itemId }; document.getElementById("photoInput")?.click(); }
+      if (action === "remove-photo") { project.photos = project.photos.filter(p => p.id !== btn.dataset.photoId); touchProject(project); save(); render(); }
+      if (action === "install-app") installApp();
+      if (action === "export") exportProject();
+    });
+
+    document.addEventListener("input", event => {
+      const el = event.target;
+      const project = activeProject();
+      if (el.dataset.field === "qty" || el.dataset.field === "unit-cost" || el.dataset.field === "notes") updateInput(el.dataset.key, el.dataset.field, el.value);
+      if (el.dataset.field === "project-name") { project.name = el.value; touchProject(project); save(); }
+      if (el.dataset.field === "project-address") { project.address = el.value; touchProject(project); save(); }
+      if (el.dataset.field === "deal") { project.deal[el.dataset.dealKey] = el.value; touchProject(project); save(); refreshLiveNumbers(); }
+      if (el.dataset.field === "photo-serial") {
+        const photo = project.photos.find(p => p.id === el.dataset.photoId);
+        if (photo) { photo.serial = el.value; touchProject(project); save(); }
+      }
+      if (el.dataset.field === "price-search") { model.priceSearch = el.value; render(); }
+      if (el.dataset.field === "global-price") {
+        const value = Number(el.value);
+        if (Number.isFinite(value)) model.globalPrices[el.dataset.itemId] = value;
+        else delete model.globalPrices[el.dataset.itemId];
+        save();
+      }
+    });
+
+    document.addEventListener("change", event => {
+      if (event.target.id === "photoInput" && event.target.files?.length) addPhotos([...event.target.files]);
+      if (event.target.id === "priceCsvInput" && event.target.files?.[0]) {
+        const reader = new FileReader();
+        reader.onload = () => importPriceCsv(reader.result);
+        reader.readAsText(event.target.files[0]);
+      }
+    });
+
+    function addSpace(type) {
+      const project = activeProject();
+      const def = SPACE_TYPES[type];
+      const count = project.spaces.filter(s => s.type === type).length + 1;
+      const name = type === "interior" || type === "systems" || type === "exterior" ? def.label : `${def.label} ${count}`;
+      const space = { id: uid("space"), type, name };
+      project.spaces.push(space);
+      model.selectedSpaceId = space.id;
+      model.roomPickerOpen = false;
+      touchProject(project); save(); render();
+    }
+
+    function renameSpace(spaceId) {
+      const project = activeProject();
+      const space = project.spaces.find(s => s.id === spaceId);
+      if (!space) return;
+      const next = prompt("Room name", space.name);
+      if (next && next.trim()) {
+        space.name = next.trim();
+        touchProject(project); save(); render();
+      }
+    }
+
+    function removeSpace(spaceId) {
+      const project = activeProject();
+      if (project.spaces.length <= 1) { showToast("A project needs at least one room"); return; }
+      const space = project.spaces.find(s => s.id === spaceId);
+      if (!space || !confirm(`Remove ${space.name}?`)) return;
+      project.spaces = project.spaces.filter(s => s.id !== spaceId);
+      for (const key of Object.keys(project.selections)) if (key.startsWith(`${spaceId}__`)) delete project.selections[key];
+      for (const key of Object.keys(project.customItems)) if (key.startsWith(`${spaceId}__`)) delete project.customItems[key];
+      project.photos = project.photos.filter(p => p.spaceId !== spaceId);
+      model.selectedSpaceId = project.spaces[0]?.id || "";
+      touchProject(project); save(); render();
+    }
+
+    function saveCustomItem() {
+      const project = activeProject();
+      const name = document.getElementById("newItemName")?.value.trim();
+      const unit = document.getElementById("newItemUnit")?.value.trim() || "ea.";
+      const cost = Number(document.getElementById("newItemCost")?.value || 0);
+      if (!name) { showToast("Item name is required"); return; }
+      const { spaceId, groupId } = model.addItemContext;
+      const bucket = customBucketKey(spaceId, groupId);
+      const item = { id: uid("custom"), name, unit, cost: Number.isFinite(cost) ? cost : 0, source: "custom" };
+      project.customItems[bucket] = [...(project.customItems[bucket] || []), item];
+      const st = getSelection(project, stateKey(spaceId, groupId, item.id), true);
+      st.checked = true;
+      st.qty = defaultQty(item);
+      model.addItemContext = null;
+      touchProject(project); save(); render();
+    }
+
+    function newProject() {
+      const name = prompt("Project name", "New Walkthrough");
+      if (!name) return;
+      const project = createProject(name.trim());
+      model.projects.unshift(project);
+      model.activeId = project.id;
+      model.projectsOpen = false;
+      model.selectedSpaceId = project.spaces[0].id;
+      save(); render();
+    }
+
+    function duplicateProject() {
+      const source = activeProject();
+      const copy = JSON.parse(JSON.stringify(source));
+      copy.id = uid("project");
+      copy.name = `${source.name} Copy`;
+      copy.createdAt = new Date().toISOString();
+      copy.updatedAt = copy.createdAt;
+      model.projects.unshift(copy);
+      model.activeId = copy.id;
+      model.projectsOpen = false;
+      save(); render();
+    }
+
+    function deleteProject() {
+      if (model.projects.length <= 1) { showToast("Keep at least one project"); return; }
+      const project = activeProject();
+      if (!confirm(`Delete ${project.name}?`)) return;
+      model.projects = model.projects.filter(p => p.id !== project.id);
+      model.activeId = model.projects[0].id;
+      model.selectedSpaceId = model.projects[0].spaces[0]?.id || "";
+      save(); render();
+    }
+
+    function installApp() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt = null;
+      } else {
+        showToast("Use your browser menu to add this app to the home screen");
+      }
+    }
+
+    function checkedRows(project) {
+      const rows = [];
+      for (const space of project.spaces) {
+        for (const groupId of SPACE_TYPES[space.type].groups) {
+          const group = GROUP_BY_ID[groupId];
+          const noAction = getSelection(project, stateKey(space.id, groupId, "__no_action__"));
+          if (noAction.checked) rows.push({ section: group.section, space: space.name, group: group.name, id: "NO-ACTION", item: "No Action Needed", unit: "", qty: 1, unitCost: 0, total: 0, notes: "Reviewed with no work required" });
+          const items = [...groupItemIds(space, groupId).map(id => ITEM_BY_ID[id]), ...customItems(project, space.id, groupId)];
+          for (const item of items) {
+            const st = getSelection(project, stateKey(space.id, groupId, item.id));
+            if (!st.checked || st.deleted) continue;
+            rows.push({
+              section: group.section,
+              space: space.name,
+              group: group.name,
+              id: item.id,
+              item: item.name,
+              unit: item.unit,
+              qty: Number(st.qty) || 0,
+              unitCost: itemCost(item, st),
+              total: lineTotal(item, st),
+              notes: st.notes || ""
+            });
+          }
+        }
+      }
+      return rows;
+    }
+
+    function exportProject() {
+      const project = activeProject();
+      const base = safeFile(`${project.name || "Repair Estimate"}-${todayIso()}`);
+      const rows = checkedRows(project);
+      const stats = projectStats(project);
+      const d = dealMath(project);
+      const sheets = [
+        {
+          name: "Estimate",
+          rows: [
+            ["SparkScope Repair Estimate"],
+            ["Project", project.name],
+            ["Address", project.address || ""],
+            ["Date", todayIso()],
+            [],
+            ["Section","Room","Group","Item ID","Repair Item","Unit","Qty","Unit Cost","Line Total","Notes"],
+            ...rows.map(r => [r.section,r.space,r.group,r.id,r.item,r.unit,r.qty,r.unitCost,r.total,r.notes]),
+            [],
+            ["Grand Total","","","","","","","",stats.total,""]
+          ]
+        },
+        {
+          name: "Deal Analyzer",
+          rows: [
+            ["Metric","Value"],
+            ["ARV", d.arv],
+            ["Purchase", d.purchase],
+            ["Repair total", d.repairs],
+            ["Contingency", d.contingency],
+            ["Holding cost", d.holding],
+            ["Selling cost", d.selling],
+            ["Total basis", d.totalBasis],
+            ["Target profit", d.targetProfit],
+            ["Max offer", d.maxOffer],
+            ["Projected profit", d.projectedProfit],
+            ["Repair per sqft", d.repairPerSqft]
+          ]
+        },
+        {
+          name: "Photos",
+          rows: [
+            ["File","Attached To","Serial","Captured"],
+            ...project.photos.map((p, i) => [`photos/${safeFile(p.targetLabel || "photo")}-${i + 1}.jpg`, p.targetLabel || "", p.serial || "", p.createdAt || ""])
+          ]
+        }
+      ];
+      const xlsxBytes = createXlsx(sheets);
+      const files = [{ name: `${base}.xlsx`, bytes: xlsxBytes }];
+      project.photos.forEach((photo, index) => {
+        files.push({ name: `photos/${safeFile(photo.targetLabel || "photo")}-${index + 1}.jpg`, bytes: dataUrlToBytes(photo.dataUrl) });
+      });
+      const zip = createZip(files);
+      downloadBytes(zip, `${base}.zip`, "application/zip");
+      showToast("Export started");
+    }
+
+    function safeFile(name) {
+      return String(name || "file").replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "file";
+    }
+
+    function dataUrlToBytes(dataUrl) {
+      const b64 = dataUrl.split(",")[1] || "";
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes;
+    }
+
+    function downloadBytes(bytes, filename, type) {
+      const blob = new Blob([bytes], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function createXlsx(sheets) {
+      const files = {};
+      files["[Content_Types].xml"] = xmlBytes(contentTypes(sheets.length));
+      files["_rels/.rels"] = xmlBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+      files["xl/workbook.xml"] = xmlBytes(workbookXml(sheets));
+      files["xl/_rels/workbook.xml.rels"] = xmlBytes(workbookRels(sheets.length));
+      files["xl/styles.xml"] = xmlBytes(stylesXml());
+      sheets.forEach((sheet, i) => { files[`xl/worksheets/sheet${i + 1}.xml`] = xmlBytes(sheetXml(sheet.rows)); });
+      return createZip(Object.entries(files).map(([name, bytes]) => ({ name, bytes })));
+    }
+
+    function xmlBytes(xml) { return new TextEncoder().encode(xml); }
+    function xmlEscape(value) { return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[ch])); }
+    function colName(n) {
+      let s = "";
+      while (n >= 0) { s = String.fromCharCode((n % 26) + 65) + s; n = Math.floor(n / 26) - 1; }
+      return s;
+    }
+    function sheetXml(rows) {
+      const body = rows.map((row, r) => `<row r="${r + 1}">${row.map((value, c) => {
+        const ref = `${colName(c)}${r + 1}`;
+        const style = r === 0 ? 1 : (r === 5 ? 2 : 0);
+        if (value === "" || value === null || value === undefined) return `<c r="${ref}" s="${style}"/>`;
+        if (typeof value === "number" && Number.isFinite(value)) return `<c r="${ref}" s="${style}"><v>${value}</v></c>`;
+        return `<c r="${ref}" t="inlineStr" s="${style}"><is><t>${xmlEscape(value)}</t></is></c>`;
+      }).join("")}</row>`).join("");
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><sheetData>${body}</sheetData></worksheet>`;
+    }
+    function contentTypes(count) {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${Array.from({ length: count }, (_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`;
+    }
+    function workbookXml(sheets) {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((sheet, i) => `<sheet name="${xmlEscape(sheet.name).slice(0, 31)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>`;
+    }
+    function workbookRels(count) {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${Array.from({ length: count }, (_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${count + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+    }
+    function stylesXml() {
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF172033"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF172033"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF0E6"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="1" borderId="0" xfId="0" applyFill="1" applyFont="1"/><xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFill="1" applyFont="1"/></cellXfs></styleSheet>`;
+    }
+
+    function createZip(files) {
+      const enc = new TextEncoder();
+      const locals = [], centrals = [];
+      let offset = 0;
+      for (const file of files) {
+        const nameBytes = enc.encode(file.name);
+        const data = file.bytes instanceof Uint8Array ? file.bytes : new Uint8Array(file.bytes);
+        const crc = crc32(data);
+        const local = new Uint8Array(30 + nameBytes.length + data.length);
+        const lv = new DataView(local.buffer);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0, true);
+        lv.setUint16(8, 0, true);
+        lv.setUint16(10, dosTime(), true);
+        lv.setUint16(12, dosDate(), true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, data.length, true);
+        lv.setUint32(22, data.length, true);
+        lv.setUint16(26, nameBytes.length, true);
+        local.set(nameBytes, 30);
+        local.set(data, 30 + nameBytes.length);
+        locals.push(local);
+        const central = new Uint8Array(46 + nameBytes.length);
+        const cv = new DataView(central.buffer);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, dosTime(), true);
+        cv.setUint16(14, dosDate(), true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, data.length, true);
+        cv.setUint32(24, data.length, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint32(42, offset, true);
+        central.set(nameBytes, 46);
+        centrals.push(central);
+        offset += local.length;
+      }
+      const centralSize = centrals.reduce((sum, part) => sum + part.length, 0);
+      const end = new Uint8Array(22);
+      const ev = new DataView(end.buffer);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(8, files.length, true);
+      ev.setUint16(10, files.length, true);
+      ev.setUint32(12, centralSize, true);
+      ev.setUint32(16, offset, true);
+      return concatBytes([...locals, ...centrals, end]);
+    }
+    function concatBytes(parts) {
+      const out = new Uint8Array(parts.reduce((sum, p) => sum + p.length, 0));
+      let pos = 0;
+      for (const part of parts) { out.set(part, pos); pos += part.length; }
+      return out;
+    }
+    function dosTime() {
+      const d = new Date();
+      return (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2);
+    }
+    function dosDate() {
+      const d = new Date();
+      return ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    }
+    const CRC_TABLE = (() => {
+      const table = new Uint32Array(256);
+      for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+        table[n] = c >>> 0;
+      }
+      return table;
+    })();
+    function crc32(bytes) {
+      let c = 0xffffffff;
+      for (const byte of bytes) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
+      return (c ^ 0xffffffff) >>> 0;
+    }
+
+    window.addEventListener("beforeinstallprompt", event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+    });
+    if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+    }
+
+    load();
+    render();
+  })();
+  </script>
+</body>
+</html>
