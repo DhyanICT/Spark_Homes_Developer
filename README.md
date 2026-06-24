@@ -38,4 +38,4 @@ The app intentionally uses no framework and no CDN dependency. ZIP and XLSX expo
 
 ## AI usage note
 
-AI assistance was used only to generate boilerplate code. The data model, feature decisions, implementation logic, verification, and final writeup were completed based on my understanding of the contest brief and price list.
+AI assistance was used to synthesize the brief into a static implementation plan, produce the initial code, and generate the one-page writeup. The data model, feature decisions, and verification pass were kept tied to the provided contest brief and price list.
